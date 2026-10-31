@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a1428">
+<title>Angualasto Mágico</title>
+<style>
+  :root{
+    --gold:#f2c879;
+    --paper:#f4ecd8;
+    --ink:#2a1f12;
+    --accent:#c9843a;
+    --earth:#8a5a1a;
+  }
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+
+  html,body{
+    height:100vh; height:100dvh; overflow:hidden; font-family:Georgia,serif;
+    overscroll-behavior:none;
+  }
+
+  body{
+    background:linear-gradient(180deg,#050a15 0%,#0a1428 30%,#132a45 55%,#0a1a2a 70%,#050d18 100%);
+    color:var(--gold); position:relative; -webkit-tap-highlight-color:transparent;
+  }
+
+  /* ---------- Decoración ---------- */
+  #decorations{position:fixed;inset:0;pointer-events:none;z-index:1;overflow:hidden}
+
+  .star{position:absolute;background:#fff;border-radius:50%;animation:twinkle ease-in-out infinite}
+  @keyframes twinkle{0%,100%{opacity:.2}50%{opacity:1}}
+
+  .moon{
+    position:absolute;top:8vh;right:10vw;width:80px;height:80px;border-radius:50%;
+    background:radial-gradient(circle at 40% 40%,#fff8e0,#ffe8b0 40%,#e8c880 70%,#c8a050);
+    box-shadow:0 0 40px 10px rgba(255,232,176,.4),0 0 100px 30px rgba(255,232,176,.15);
+    animation:moonGlow 6s ease-in-out infinite alternate;
+  }
+  @keyframes moonGlow{
+    from{box-shadow:0 0 40px 10px rgba(255,232,176,.4),0 0 100px 30px rgba(255,232,176,.15)}
+    to{box-shadow:0 0 60px 15px rgba(255,232,176,.6),0 0 140px 40px rgba(255,232,176,.25)}
+  }
+
+  .firefly{
+    position:absolute;width:4px;height:4px;background:var(--gold);border-radius:50%;
+    box-shadow:0 0 10px 3px rgba(242,200,121,.8);animation:fly linear infinite;
+  }
+  @keyframes fly{
+    0%{opacity:0;transform:translate(0,0)}
+    10%{opacity:1}
+    90%{opacity:.5}
+    100%{opacity:0;transform:translate(-40px,-160px)}
+  }
+
+  .mountains{position:absolute;bottom:0;left:0;right:0;height:38vh;pointer-events:none}
+
+  /* ---------- Escenario ---------- */
+  .stage{
+    position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    z-index:10; padding:1rem 1rem 5.5rem; touch-action:pan-y;
+  }
+  .scene{
+    position:relative; width:min(1000px,94vw); height:min(680px,80vh);
+    perspective:2400px; touch-action:pan-y;
+  }
+
+  /* ---------- Portada ---------- */
+  .cover{
+    position:absolute;inset:0;
+    background:radial-gradient(circle at 50% 30%,rgba(242,200,121,.12),transparent 60%),linear-gradient(135deg,#0f1a2e 0%,#1a2a44 40%,#0c1526 100%);
+    border-radius:10px;
+    box-shadow:0 30px 60px rgba(0,0,0,.8),0 0 0 1px rgba(242,200,121,.3),inset 0 0 100px rgba(0,0,0,.7);
+    display:flex;flex-direction:column;justify-content:center;align-items:center;
+    text-align:center;padding:2rem;cursor:pointer;overflow:hidden;
+    transition:transform 1.4s cubic-bezier(.6,0,.4,1),opacity 1.2s ease .2s;
+    transform-origin:left center; backface-visibility:hidden; z-index:2;
+    animation:coverFloat 6s ease-in-out infinite; touch-action:manipulation;
+  }
+  @keyframes coverFloat{0%,100%{translate:0 0}50%{translate:0 -10px}}
+  .cover.opened{transform:rotateY(-120deg);opacity:0;pointer-events:none;animation:none}
+  .cover::before{content:'';position:absolute;inset:16px;border:1px solid rgba(242,200,121,.4);border-radius:4px;pointer-events:none}
+
+  .cover-title{font-size:clamp(1.6rem,4vw,2.6rem);letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:400;line-height:1.4;text-shadow:0 0 30px rgba(242,200,121,.5)}
+  .cover-ornament{margin:2rem 0;font-size:1.8rem;color:var(--gold);opacity:.7}
+  .cover-sub{font-size:.75rem;letter-spacing:.35em;color:var(--gold);opacity:.7;text-transform:uppercase;font-style:italic}
+  .cover-hint{position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);font-size:.8rem;letter-spacing:.25em;color:var(--gold);opacity:.6;text-transform:uppercase;white-space:nowrap;animation:hintPulse 2.5s ease-in-out infinite}
+  @keyframes hintPulse{0%,100%{opacity:.3}50%{opacity:.9}}
+
+  .cover-lantern{position:absolute;top:10%;right:10%;width:36px;height:54px;border-radius:5px;background:linear-gradient(180deg,#3a2a12,#1a1206);animation:lanternFlicker 3s infinite}
+  .cover-lantern::after{content:'';position:absolute;inset:7px;border-radius:3px;background:radial-gradient(circle,#fff5d0,#f2c879 50%,#c9843a 100%);box-shadow:0 0 25px 6px rgba(242,200,121,.8)}
+  @keyframes lanternFlicker{0%,100%{box-shadow:0 0 30px 8px rgba(242,200,121,.4)}30%{box-shadow:0 0 60px 16px rgba(242,200,121,.7)}60%{box-shadow:0 0 40px 10px rgba(242,200,121,.5)}}
+
+  /* ---------- Libro ---------- */
+  .book{
+    position:absolute;inset:0; display:grid;grid-template-columns:1fr 1fr;
+    opacity:0;transform:scale(.95); transition:opacity .8s ease .4s,transform .8s ease .4s;
+    border-radius:10px;overflow:hidden; box-shadow:0 30px 60px rgba(0,0,0,.7);
+    z-index:1; touch-action:pan-y;
+  }
+  .book.visible{opacity:1;transform:scale(1)}
+
+  .book-page{
+    position:relative;background:var(--paper);padding:2rem;
+    display:flex;flex-direction:column;overflow:hidden;color:var(--ink);
+  }
+  .book-page.left{border-radius:10px 0 0 10px;box-shadow:inset -20px 0 30px -20px rgba(0,0,0,.3)}
+  .book-page.right{border-radius:0 10px 10px 0;box-shadow:inset 20px 0 30px -20px rgba(0,0,0,.3)}
+
+  .chapter-head{text-align:center;margin-bottom:1rem}
+  .chapter-number{font-size:.7rem;letter-spacing:.4em;color:var(--accent);text-transform:uppercase;opacity:.7}
+  .chapter-head h2{font-size:clamp(1.05rem,2vw,1.4rem);color:#5a3a14;letter-spacing:.1em;text-transform:uppercase;font-weight:400;margin-top:.4rem}
+  .authors{font-size:0.75rem; color:var(--earth); font-style:italic; margin-top:0.5rem; opacity:0.8}
+  .ornament{color:var(--accent);margin-top:.6rem;font-size:1rem;opacity:.6}
+
+  /* Imágenes en el libro */
+  .book-img-container {
+    width: 100%; flex-grow: 1; margin-bottom: 1rem;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.03); border-radius: 4px; overflow: hidden;
+    border: 1px solid rgba(140,100,40,.2); position: relative;
+  }
+  .book-img-container img {
+    width: 100%; height: 100%; object-fit: cover;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  }
+  .img-fallback {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    text-align: center; padding: 1rem; font-size: 0.8rem; color: var(--earth);
+  }
+
+  .book-page p{font-size:clamp(.92rem,1.35vw,1rem);line-height:1.8;color:#3b2e1f;margin-bottom:.9rem;text-align:justify;hyphens:auto;}
+  .book-page p.dropcap::first-letter{font-size:3em;float:left;line-height:.85;padding:.08em .12em 0 0;color:var(--accent);font-weight:bold;}
+  .folio{margin-top:auto;text-align:center;font-size:.72rem;color:#8a6a3a;letter-spacing:.25em;font-style:italic}
+
+  /* ---------- Controles ---------- */
+  .controls{
+    position:fixed; bottom:max(1.25rem, env(safe-area-inset-bottom));
+    left:50%;transform:translateX(-50%); display:flex;align-items:center;gap:.75rem;
+    z-index:20;opacity:0;pointer-events:none; transition:opacity .6s ease;
+    padding:.25rem; border-radius:999px;
+  }
+  .controls.visible{opacity:1;pointer-events:auto}
+
+  .controls button{
+    background:rgba(10,20,35,.7); border:1px solid rgba(242,200,121,.4);
+    color:var(--gold); min-height:44px;min-width:44px; padding:.55rem 1.1rem;
+    border-radius:999px; font-family:Georgia,serif;font-size:.82rem;letter-spacing:.08em;
+    cursor:pointer;transition:all .3s ease; touch-action:manipulation;
+    user-select:none;-webkit-user-select:none; backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  }
+  .controls button:hover:not(:disabled){background:rgba(242,200,121,.2)}
+  .controls button:active:not(:disabled){transform:scale(.96)}
+  .controls button:disabled{opacity:.3;cursor:not-allowed}
+
+  .page-indicator{color:var(--gold);font-size:.78rem;letter-spacing:.15em;padding:0 .6rem;font-style:italic;opacity:.7;min-width:64px;text-align:center}
+
+  /* ---------- Barra de progreso ---------- */
+  .progress{position:fixed;bottom:0;left:0;right:0;height:3px;background:rgba(10,20,35,.5);z-index:15}
+  .progress-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--gold));transition:width .6s ease;box-shadow:0 0 10px rgba(242,200,121,.6)}
+
+  /* ========== MÓVIL / TABLET ========== */
+  @media (max-width: 768px){
+    .stage{padding:0.5rem 0.5rem 5rem}
+    .scene{width:100%;height:100%}
+    .moon{width:60px;height:60px;top:6vh;right:8vw}
+
+    /* Libro: una sola página */
+    .book{grid-template-columns:1fr}
+    .book-page.left{display:none}
+    .book-page.right{border-radius:10px;box-shadow:none;padding:clamp(1.2rem,5vw,2rem)}
+    .book::before,.book::after{display:none}
+
+    .cover{padding:1.5rem;border-radius:10px}
+    .cover-title{font-size:clamp(1.7rem,7vw,2.4rem);letter-spacing:.15em}
+    .cover-ornament{margin:1.5rem 0;font-size:1.5rem}
+    .cover-sub{font-size:.7rem;letter-spacing:.3em}
+    .cover-hint{bottom:1.5rem;font-size:.75rem}
+
+    .book-page p{font-size:clamp(.95rem,3.8vw,1.05rem);line-height:1.75}
+    .chapter-head h2{font-size:clamp(1.1rem,4.5vw,1.35rem)}
+
+    .controls{gap:.5rem;bottom:max(1rem, env(safe-area-inset-bottom))}
+    .controls button{padding:.55rem .9rem;font-size:.78rem}
+  }
+
+  @media (max-width: 380px){
+    .stage{padding:0.35rem 0.35rem 4.5rem}
+    .book-page{padding:1rem}
+    .chapter-head{margin-bottom:1rem}
+    .book-page p{font-size:.92rem;line-height:1.7}
+    .controls button{padding:.5rem .75rem;font-size:.72rem}
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
+  }
+</style>
+</head>
+<body>
+
+<div id="decorations">
+  <div class="moon"></div>
+  <svg class="mountains" viewBox="0 0 1200 400" preserveAspectRatio="none">
+    <defs>
+      <linearGradient id="mg" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#0a1526"/><stop offset="100%" stop-color="#050d18"/>
+      </linearGradient>
+    </defs>
+    <path d="M0,300 L100,200 L180,240 L280,140 L380,220 L480,160 L560,200 L680,120 L780,200 L880,170 L980,240 L1080,190 L1200,260 L1200,400 L0,400 Z" fill="url(#mg)"/>
+  </svg>
+</div>
+
+<div class="stage">
+  <div class="scene">
+    <div class="book" id="book">
+      <div class="book-page left"  id="pageLeft"></div>
+      <div class="book-page right" id="pageRight"></div>
+    </div>
+    <div class="cover" id="cover">
+      <div class="cover-lantern"></div>
+      <div class="cover-title">Angualasto<br>Mágico</div>
+      <div class="cover-ornament">✦</div>
+      <div class="cover-sub">Relatos, leyendas y memorias</div>
+      <div class="cover-hint">— toca para abrir —</div>
+    </div>
+  </div>
+</div>
+
+<div class="controls" id="controls">
+  <button id="prev" type="button">◀ Anterior</button>
+  <span class="page-indicator" id="pageIndicator">1 / 1</span>
+  <button id="next" type="button">Siguiente ▶</button>
+</div>
+
+<div class="progress"><div class="progress-fill" id="progressFill"></div></div>
+
+<script>
+(function(){
+  'use strict';
+
+  // ========== CONTENIDO EXTRAÍDO DE TU DOCUMENTO ==========
+  // Se divide en "spreads" (doble página en PC, una en celular)
+  var spreads = [
+    {
+      num:'I', title:'Cacique Pismanta', authors:'Guajardo, Ángel Manrrique, Federico',
+      img: 'pismanta.jpg',
+      left:`<p class="dropcap">Hace muchos años en el valle de Iglesia vivía el cacique Pismanta, un valiente líder indígena que protegía a su pueblo y sus tierras. Cuando llegaron los conquistadores españoles, Pismanta se negó a entregar su territorio. Luchó para defender a su gente, sus costumbres y la libertad de su comunidad.</p>`,
+      right:`<p>Cuenta la leyenda que, al verse rodeado y sin posibilidades de vencer, el cacique decidió refugiarse en una cueva junto a las montañas. Según la tradición, lloró tanto por el destino de su pueblo que sus lágrimas dieron origen a las aguas termales de Pismanta.</p><p>Desde entonces, se dice que esas aguas guardan la tristeza y el espíritu del cacique, que sigue protegiendo la tierra de sus ancestros.</p>`,
+      folio:'— 1 —'
+    },
+    {
+      num:'II', title:'La Difunta María y el Carrizal', authors:'Munizaga, Benjamín Parada, Lautaro',
+      img: 'maria.jpg',
+      left:`<p class="dropcap">Angualasto tiene un paraje entre el cerro llamado El Carrizal. Allí, según cuentan, ocurrió un aluvión en el año 1944. En aquel lugar vivían familias dedicadas a la agricultura y a la cría de animales.</p><p>Una noche, después de una gran tormenta, los pobladores fueron sorprendidos por un enorme aluvión de agua, rocas y barro que descendió por las sierras de La Punilla.</p>`,
+      right:`<p>El desastre arrasó con todo el paraje y se cobró la vida de más de treinta personas que no pudieron escapar. Algunos habitantes lograron huir y refugiarse en los cerros.</p><p>Cuentan que, días después, encontraron el cuerpo sin vida de una mujer llamada María. Al levantar su cuerpo, quedó marcada en el suelo la silueta de su figura, un hecho que llamó poderosamente la atención. En su memoria, construyeron una bóveda. Con el tiempo, comenzaron a atribuirle milagros y María se convirtió en la protectora del lugar. De aquel paraje todavía quedan vestigios originales de la tragedia.</p>`,
+      folio:'— 2 —'
+    },
+    {
+      num:'III', title:'La Momia de Angualasto', authors:'Montaño, Eduardes',
+      img: 'momia.jpg',
+      left:`<p class="dropcap">Cuenta la leyenda que hace aproximadamente 600 años, en las tierras de Angualasto, vivía un pueblo originario que se dedicaba a la agricultura, a la cría de llamas y al trabajo con arcilla. Eran personas que respetaban a la naturaleza y creían en la Pachamama, la madre tierra.</p>`,
+      right:`<p>Entre ellos vivía una joven de 17 años que pertenecía a una familia importante. Un día la joven murió y fue enterrada siguiendo las costumbres de su pueblo, en posición fetal como símbolo de regresar al vientre de la madre tierra.</p><p>Pasaron siglos y en el año 1970 su cuerpo fue encontrado por investigadores. Lo que más sorprendió fue su piel, su rostro, sus pestañas y su cabello, que todavía conservaban su estado natural. Los estudios indicaron que la conservación se debía a la sequedad del clima y a los materiales utilizados. Desde entonces, la momia de Angualasto se convirtió en un recuerdo de los antiguos habitantes de esta tierra.</p>`,
+      folio:'— 3 —'
+    },
+    {
+      num:'IV', title:'Los Cuatro Arrieros de Colangüil', authors:'Díaz, Jeremias Manrique, Jona',
+      img: 'arrieros.jpg',
+      left:`<p class="dropcap">Hace muchos años, en Colangüil, departamento de Iglesia, San Juan, vivían cuatro arrieros llamados Orosindo Poblete, Domingo Vega, Humberto Vega y Rafael Araya. Eran hombres trabajadores que conocían muy bien la cordillera y se dedicaban a cuidar y trasladar el ganado.</p>`,
+      right:`<p>En junio de 1983, los cuatro salieron hacia las montañas para buscar sus animales. Antes de partir, el cielo empezó a oscurecerse y el viento soplaba cada vez más fuerte. De repente, una terrible tormenta de nieve, conocida como el Viento Blanco, cubrió la cordillera. La nieve borró los senderos y el frío se volvió cada vez más intenso. Los arrieros intentaron encontrar un refugio, pero la tormenta los sorprendió.</p><p>Pasaron los días y los habitantes de Colangüil se enteraron de la triste noticia de que los cuatro habían fallecido en las montañas. Desde ese entonces, cuentan que, cuando el viento sopla con fuerza, parece escucharse el eco de los arrieros y el sonido de los animales. Así nació la leyenda de los cuatro arrieros de Colangüil.</p>`,
+      folio:'— 4 —'
+    },
+    {
+      num:'V', title:'La Leyenda del Durazno Maldito', authors:'Aguilera, Zoe Díaz, Tatiana Manrrique, Biaca Rodríguez, Aurora',
+      img: 'durazno.jpg',
+      left:`<p class="dropcap">Hace muchos años, en un pequeño pueblo cerca de las montañas, vivían Amelia y Antonio, una pareja que estaba con mucha ilusión por la llegada de su primer hijo. Detrás de su casa crecía un duraznero misterioso que dio frutos fuera de la temporada habitual.</p><p>Amelia comenzó a sentir que aquel árbol escondía una fuerza oscura y peligrosa. Sin embargo, Antonio no le creyó. Mientras tanto, Mercedes, una mujer cercana a la pareja, sentía una profunda envidia por la felicidad de Amelia.</p>`,
+      right:`<p>Una noche, el duraznero pareció cobrar vida bajo la luz de la luna. Sus ramas se movían, aunque no había viento, y sus frutos brillaban de una manera extraña. Desde entonces, el árbol quedó relacionado con una antigua maldición que traía desgracias a quienes ignoraban sus señales.</p><p>Los habitantes del pueblo, aterrorizados, comenzaron a contar la historia del duraznero maldito y a advertir a las nuevas generaciones que no todos los frutos hermosos esconden algo bueno. Se dice que cuando un durazno florece fuera de su tiempo, es una señal de que algo extraño está por suceder.</p><p style="text-align:center;color:#8a5a1a;font-style:italic;margin-top:1.5rem;">~ Fin ~</p>`,
+      folio:'— 5 —'
+    }
+  ];
+
+  var cover = document.getElementById('cover');
+  var book = document.getElementById('book');
+  var pLeft = document.getElementById('pageLeft');
+  var pRight = document.getElementById('pageRight');
+  var controls = document.getElementById('controls');
+  var prevBtn = document.getElementById('prev');
+  var nextBtn = document.getElementById('next');
+  var progressFill = document.getElementById('progressFill');
+  var pageIndicator = document.getElementById('pageIndicator');
+
+  var BREAKPOINT = 768;
+  var currentSpread = 0;
+  var currentHalf = 0; 
+  var opened = false;
+
+  function isMobile() { return window.matchMedia('(max-width:' + BREAKPOINT + 'px)').matches; }
+  function totalPages() { return isMobile() ? spreads.length * 2 : spreads.length; }
+  function currentPage() { return isMobile() ? currentSpread * 2 + currentHalf + 1 : currentSpread + 1; }
+
+  // Generar HTML de la imagen con fallback en caso de que no exista
+  function getImgHtml(src, title) {
+    return `<div class="book-img-container">
+              <img src="${src}" alt="${title}" onerror="this.style.display='none'; this.parentElement.querySelector('.img-fallback').style.display='flex';">
+              <div class="img-fallback" style="display:none;">🖼️<br><br><span style="font-size:0.7rem;">Falta ${src}</span></div>
+            </div>`;
+  }
+
+  function render() {
+    if (currentSpread < 0) currentSpread = 0;
+    if (currentSpread >= spreads.length) currentSpread = spreads.length - 1;
+    if (currentHalf < 0) currentHalf = 0;
+    if (currentHalf > 1) currentHalf = 1;
+
+    var spread = spreads[currentSpread];
+
+    if (isMobile()) {
+      // En móvil, juntamos todo en la página derecha visible
+      var html = `<div class="chapter-head">
+                    <div class="chapter-number">Capítulo ${spread.num}</div>
+                    <h2>${spread.title}</h2>
+                    <div class="authors">${spread.authors}</div>
+                    <div class="ornament">✦ ✦ ✦</div>
+                  </div>`;
+      
+      // Si estamos en la "mitad izquierda", mostramos imagen + texto izquierdo
+      if (currentHalf === 0) {
+         html += getImgHtml(spread.img, spread.title);
+         html += spread.left;
+      } else {
+         // Si estamos en la "mitad derecha", mostramos el texto derecho
+         html += spread.right;
+      }
+      
+      html += `<div class="folio">— ${currentSpread * 2 + currentHalf + 1} —</div>`;
+      pRight.innerHTML = html;
+
+    } else {
+      // En PC mostramos las dos páginas
+      pLeft.innerHTML = `<div class="chapter-head">
+                          <div class="chapter-number">Capítulo ${spread.num}</div>
+                          <h2>${spread.title}</h2>
+                          <div class="authors">${spread.authors}</div>
+                          <div class="ornament">✦ ✦ ✦</div>
+                        </div>
+                        ${getImgHtml(spread.img, spread.title)}
+                        ${spread.left}`;
+      
+      pRight.innerHTML = `${spread.right}
+                         <div class="folio">${spread.folio}</div>`;
+    }
+
+    var total = totalPages();
+    var actual = currentPage();
+    var atStart = (currentSpread === 0 && currentHalf === 0);
+    var atEnd = (currentSpread === spreads.length - 1) && (isMobile() ? currentHalf === 1 : true);
+
+    prevBtn.disabled = atStart;
+    nextBtn.disabled = atEnd;
+    progressFill.style.width = (actual / total * 100) + '%';
+    pageIndicator.textContent = actual + ' / ' + total;
+  }
+
+  function next() {
+    if (isMobile()) {
+      if (currentHalf === 0) currentHalf = 1;
+      else if (currentSpread < spreads.length - 1) { currentSpread++; currentHalf = 0; }
+    } else {
+      if (currentSpread < spreads.length - 1) currentSpread++;
+    }
+    render();
+  }
+
+  function prev() {
+    if (isMobile()) {
+      if (currentHalf === 1) currentHalf = 0;
+      else if (currentSpread > 0) { currentSpread--; currentHalf = 1; }
+    } else {
+      if (currentSpread > 0) currentSpread--;
+    }
+    render();
+  }
+
+  function openBook() {
+    if (opened) return;
+    opened = true;
+    cover.classList.add('opened');
+    book.classList.add('visible');
+    controls.classList.add('visible');
+    setTimeout(render, 150);
+  }
+
+  cover.addEventListener('click', openBook);
+  prevBtn.addEventListener('click', (e) => { e.preventDefault(); prev(); });
+  nextBtn.addEventListener('click', (e) => { e.preventDefault(); next(); });
+
+  document.addEventListener('keydown', (e) => {
+    if (!opened) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openBook(); } return; }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); next(); }
+  });
+
+  // Swipe táctil
+  var tX = 0, tY = 0, tracking = false;
+  book.addEventListener('touchstart', e => {
+    if (!opened || e.touches.length !== 1) return;
+    tX = e.touches[0].clientX; tY = e.touches[0].clientY; tracking = true;
+  }, {passive:true});
+  book.addEventListener('touchmove', e => {
+    if (!tracking) return;
+    var dx = e.touches[0].clientX - tX;
+    var dy = e.touches[0].clientY - tY;
+    // Prevenir scroll de fondo si el gesto es claramente horizontal
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) e.preventDefault();
+  }, {passive:false});
+  book.addEventListener('touchend', e => {
+    if (!tracking) return;
+    tracking = false;
+    var dx = e.changedTouches[0].clientX - tX;
+    var dy = e.changedTouches[0].clientY - tY;
+    if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy)) {
+      if (dx < 0) next(); else prev();
+    }
+  }, {passive:true});
+
+  // Cambio de pantalla
+  window.matchMedia('(max-width:' + BREAKPOINT + 'px)').addEventListener('change', () => {
+    currentHalf = 0;
+    if (opened) render();
+  });
+
+  // Estrellas y luciérnagas
+  var deco = document.getElementById('decorations');
+  for (var i = 0; i < 50; i++) {
+    var s = document.createElement('div'); s.className = 'star';
+    s.style.left = Math.random() * 100 + '%'; s.style.top = Math.random() * 55 + '%';
+    var sz = 1 + Math.random() * 2; s.style.width = sz + 'px'; s.style.height = sz + 'px';
+    s.style.animationDuration = (2 + Math.random() * 4) + 's';
+    s.style.animationDelay = (Math.random() * 5) + 's';
+    deco.appendChild(s);
+  }
+  for (var j = 0; j < 12; j++) {
+    var f = document.createElement('div'); f.className = 'firefly';
+    f.style.left = Math.random() * 100 + '%'; f.style.top = (55 + Math.random() * 40) + '%';
+    f.style.animationDuration = (8 + Math.random() * 8) + 's';
+    f.style.animationDelay = (Math.random() * 8) + 's';
+    deco.appendChild(f);
+  }
+
+})();
+</script>
+</body>
+</html>
